@@ -2,44 +2,64 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard CRUD Mahasiswa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Mahasiswa - SQLi Demo</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-    <h2>Dashboard CRUD Mahasiswa</h2>
-    <a href="/login.html">Logout</a>
-    <hr>
+<body style="display: block; background-color: #f4f6f9; min-height: 100vh;">
 
-    <h3>Tambah Mahasiswa</h3>
-    <form id="addForm">
-        <input type="text" id="nim" placeholder="NIM" required>
-        <input type="text" id="nama" placeholder="Nama" required>
-        <input type="text" id="jurusan" placeholder="Jurusan" required>
-        <button type="submit">Simpan</button>
-    </form>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Dashboard CRUD Mahasiswa</h2>
+            <a href="/login" class="btn-logout">Keluar</a>
+        </div>
 
-    <hr>
+        <!-- Form Tambah / Edit Mahasiswa -->
+        <div class="card-section" id="formCard">
+            <h3 id="formTitle">Tambah Mahasiswa Baru</h3>
+            <form id="mhsForm" class="form-inline">
+                <input type="hidden" id="mhsId">
+                <input type="text" id="nim" placeholder="NIM" required autocomplete="off">
+                <input type="text" id="nama" placeholder="Nama Lengkap" required autocomplete="off">
+                <input type="text" id="jurusan" placeholder="Jurusan" required autocomplete="off">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn-submit" id="btnSubmit">Simpan</button>
+                    <button type="button" class="btn-delete" id="btnCancelEdit" style="display: none;" onclick="resetForm()">Batal</button>
+                </div>
+            </form>
+        </div>
 
-    <h3>Cari Mahasiswa (Rentan SQLi)</h3>
-    <input type="text" id="searchInput" placeholder="Cari nama/NIM...">
-    <button onclick="loadMahasiswa()">Cari</button>
+        <!-- Section Pencarian Data & Tabel -->
+        <div class="card-section">
+            <h3>Daftar Mahasiswa <span class="demo-badge" style="margin-left: 10px;">⚠️ Fitur Cari Rentan SQLi</span></h3>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Cari berdasarkan nama atau NIM..." autocomplete="off">
+                <button onclick="loadMahasiswa()" class="btn-submit">Cari</button>
+            </div>
 
-    <h3>Daftar Mahasiswa</h3>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>NIM</th>
-                <th>Nama</th>
-                <th>Jurusan</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody id="mhsTableBody">
-            <!-- Data dimuat lewat JS -->
-        </tbody>
-    </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>NIM</th>
+                            <th>Nama</th>
+                            <th>Jurusan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mhsTableBody">
+                        <!-- Data dimuat lewat JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
+        let isEdit = false;
+
         async function loadMahasiswa() {
             const search = document.getElementById('searchInput').value;
             const res = await fetch(`/api/mahasiswa?search=${encodeURIComponent(search)}`);
@@ -49,6 +69,10 @@
             tbody.innerHTML = '';
             
             if(Array.isArray(data)) {
+                if(data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #718096;">Tidak ada data ditemukan</td></tr>`;
+                    return;
+                }
                 data.forEach(m => {
                     tbody.innerHTML += `
                         <tr>
@@ -56,39 +80,86 @@
                             <td>${m.nim}</td>
                             <td>${m.nama}</td>
                             <td>${m.jurusan}</td>
-                            <td><button onclick="hapusData(${m.id})">Hapus</button></td>
+                            <td>
+                                <div class="btn-action-group">
+                                    <button onclick="editData(${m.id}, '${m.nim}', '${m.nama}', '${m.jurusan}')" class="btn-edit">Edit</button>
+                                    <button onclick="hapusData(${m.id})" class="btn-delete">Hapus</button>
+                                </div>
+                            </td>
                         </tr>
                     `;
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="5">Error: ${JSON.stringify(data)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="color: red;">Error: ${JSON.stringify(data)}</td></tr>`;
             }
         }
 
-        document.getElementById('addForm').addEventListener('submit', async (e) => {
+        // Handle Submit (Bisa untuk Create / Insert & Update)
+        document.getElementById('mhsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const id = document.getElementById('mhsId').value;
             const nim = document.getElementById('nim').value;
             const nama = document.getElementById('nama').value;
             const jurusan = document.getElementById('jurusan').value;
 
-            await fetch('/api/mahasiswa', {
-                method: 'POST',
+            const url = isEdit ? `/api/mahasiswa/${id}` : '/api/mahasiswa';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nim, nama, jurusan })
             });
 
-            document.getElementById('addForm').reset();
-            loadMahasiswa();
+            const data = await res.json();
+            if(data.success) {
+                resetForm();
+                loadMahasiswa();
+            } else {
+                alert('Gagal menyimpan data: ' + data.error);
+            }
         });
 
+        // Masuk ke Mode Edit
+        function editData(id, nim, nama, jurusan) {
+            isEdit = true;
+            document.getElementById('mhsId').value = id;
+            document.getElementById('nim').value = nim;
+            document.getElementById('nama').value = nama;
+            document.getElementById('jurusan').value = jurusan;
+
+            document.getElementById('formTitle').innerText = `Edit Mahasiswa (ID: ${id})`;
+            document.getElementById('btnSubmit').innerText = 'Perbarui';
+            document.getElementById('btnCancelEdit').style.display = 'inline-block';
+            document.getElementById('formCard').classList.add('editing-mode');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Reset Form kembali ke Mode Tambah
+        function resetForm() {
+            isEdit = false;
+            document.getElementById('mhsForm').reset();
+            document.getElementById('mhsId').value = '';
+            document.getElementById('formTitle').innerText = 'Tambah Mahasiswa Baru';
+            document.getElementById('btnSubmit').innerText = 'Simpan';
+            document.getElementById('btnCancelEdit').style.display = 'none';
+            document.getElementById('formCard').classList.remove('editing-mode');
+        }
+
         async function hapusData(id) {
-            if(confirm('Yakin ingin hapus?')) {
-                await fetch(`/api/mahasiswa/${id}`, { method: 'DELETE' });
-                loadMahasiswa();
+            if(confirm('Yakin ingin menghapus data mahasiswa ini?')) {
+                const res = await fetch(`/api/mahasiswa/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if(data.success) {
+                    loadMahasiswa();
+                } else {
+                    alert('Gagal menghapus data');
+                }
             }
         }
 
-        // Load data awal
+        // Load data awal saat halaman dibuka
         loadMahasiswa();
     </script>
 </body>

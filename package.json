@@ -3,7 +3,10 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-      "dev": "bun --watch src/server.js"
+      "dev": "bun --watch src/server.js",
+      "db:seed": "bun run src/seeder.js",
+      "scanner": "bun run tools/scanner.ts"
+
     },
     "dependencies": {
       "mariadb": "^3.3.0"

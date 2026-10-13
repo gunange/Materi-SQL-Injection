@@ -2,42 +2,61 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SQLi Demo</title>
+    <!-- Link ke file CSS terpisah -->
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h2>Form Login (Vulnerable SQLi)</h2>
-    <form id="loginForm">
-        <div>
-            <label>Username:</label><br>
-            <input type="text" id="username" required>
-        </div>
-        <div>
-            <label>Password:</label><br>
-            <input type="password" id="password" required>
-        </div>
-        <br>
-        <button type="submit">Login</button>
-    </form>
-    <p id="msg" style="color: red;"></p>
+
+    <div class="login-card">
+        <h2>Login Sistem</h2>
+        <p class="subtitle">Silakan masuk dengan akun Anda</p>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Masukkan username" required autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Masukkan password" required>
+            </div>
+
+            <button type="submit" class="btn-login">Masuk</button>
+        </form>
+
+        <p id="msg"></p>
+    </div>
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const msgEl = document.getElementById('msg');
 
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
+            msgEl.innerText = '';
+            msgEl.style.color = '#333';
 
-            const data = await res.json();
-            if (data.success) {
-                alert(data.message);
-                window.location.href = '/dashboard.html';
-            } else {
-                document.getElementById('msg').innerText = data.message;
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    msgEl.style.color = '#e53e3e';
+                    msgEl.innerText = data.message || 'Login Gagal';
+                }
+            } catch (err) {
+                msgEl.style.color = '#e53e3e';
+                msgEl.innerText = 'Gagal terhubung ke server';
             }
         });
     </script>

@@ -15,6 +15,9 @@ export async function query(sql, params) {
     conn = await pool.getConnection();
     const res = await conn.query(sql, params);
     return res;
+  } catch (err) {
+    console.error('Database Query Error:', err.message);
+    throw err;
   } finally {
     if (conn) conn.release();
   }

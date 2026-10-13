@@ -11,17 +11,17 @@ serve({
     const url = new URL(req.url);
     const pathname = url.pathname;
 
-    // --- STATIC FILE SERVING (Frontend Terpisah) ---
-    if (pathname === '/' || pathname === '/login.html') {
+    // --- STATIC FILES SERVING ---
+    if (pathname === '/style.css') {
+      const css = fs.readFileSync(path.join(import.meta.dir, '../public/style.css'), 'utf-8');
+      return new Response(css, { headers: { 'Content-Type': 'text/css' } });
+    }
+    if (pathname === '/' || pathname === '/login') {
       const html = fs.readFileSync(path.join(import.meta.dir, '../public/login.html'), 'utf-8');
       return new Response(html, { headers: { 'Content-Type': 'text/html' } });
     }
-    if (pathname === '/dashboard.html') {
+    if (pathname === '/dashboard') {
       const html = fs.readFileSync(path.join(import.meta.dir, '../public/dashboard.html'), 'utf-8');
-      return new Response(html, { headers: { 'Content-Type': 'text/html' } });
-    }
-    if (pathname === '/index.html') {
-      const html = fs.readFileSync(path.join(import.meta.dir, '../public/index.html'), 'utf-8');
       return new Response(html, { headers: { 'Content-Type': 'text/html' } });
     }
 
@@ -31,9 +31,8 @@ serve({
         const body = await req.json();
         const { username, password } = body;
 
-        // VULNERABLE QUERY: Menggabungkan input langsung ke SQL string
         const sql = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-        console.log('[DEBUG SQL]:', sql); // Biar kelihatan saat demo
+        console.log('[DEBUG SQL]:', sql);
 
         const rows = await query(sql);
 
@@ -54,7 +53,6 @@ serve({
         
         let sql = '';
         if (search) {
-          // VULNERABLE QUERY PADA PENCARIAN
           sql = `SELECT * FROM mahasiswa WHERE nama LIKE '%${search}%' OR nim LIKE '%${search}%'`;
         } else {
           sql = `SELECT * FROM mahasiswa`;
@@ -68,7 +66,7 @@ serve({
       }
     }
 
-    // --- API: TAMBAH MAHASISWA (CREATE) ---
+    // --- API: TAMBAH MAHASISWA ---
     if (pathname === '/api/mahasiswa' && req.method === 'POST') {
       try {
         const { nim, nama, jurusan } = await req.json();
@@ -80,7 +78,7 @@ serve({
       }
     }
 
-    // --- API: HAPUS MAHASISWA (DELETE) ---
+    // --- API: HAPUS MAHASISWA ---
     if (pathname.startsWith('/api/mahasiswa/') && req.method === 'DELETE') {
       try {
         const id = pathname.split('/').pop();
@@ -91,6 +89,19 @@ serve({
         return Response.json({ success: false, error: err.message }, { status: 500 });
       }
     }
+
+    // --- API: UPDATE MAHASISWA ---
+    if (pathname.startsWith('/api/mahasiswa/') && req.method === 'PUT') {
+        try {
+          const id = pathname.split('/').pop();
+          const { nim, nama, jurusan } = await req.json();
+          const sql = `UPDATE mahasiswa SET nim = ?, nama = ?, jurusan = ? WHERE id = ?`;
+          await query(sql, [nim, nama, jurusan, id]);
+          return Response.json({ success: true, message: 'Data berhasil diubah' });
+        } catch (err) {
+          return Response.json({ success: false, error: err.message }, { status: 500 });
+        }
+      }
 
     return new Response('Not Found', { status: 404 });
   },
