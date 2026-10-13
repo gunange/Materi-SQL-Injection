@@ -5,7 +5,8 @@
     "scripts": {
       "dev": "bun --watch src/server.js",
       "db:seed": "bun run src/seeder.js",
-      "scanner": "bun run tools/scanner.ts"
+      "heack:scanner": "bun run tools/scanner.ts",
+      "heack:api": "bun run tools/akses_api.ts"
 
     },
     "dependencies": {
