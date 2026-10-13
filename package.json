@@ -1,0 +1,11 @@
+{
+    "name": "sqli-demo",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+      "dev": "bun --watch src/server.js"
+    },
+    "dependencies": {
+      "mariadb": "^3.3.0"
+    }
+  }
